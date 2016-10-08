@@ -79,6 +79,22 @@ namespace :db do
       Rake::Task["db:schema:load"].invoke
     end
   end
+
+  desc "Seed the database with data db/seeds/*.sql"
+  task :seed do
+    require 'sequel'
+    require_relative 'helpers/environment_helper'
+
+    env ||= ENV['RACK_ENV'] || "development"
+
+    db = MessageService::Helpers.init_environment(env)
+
+    Dir["./db/seeds/*.sql"].each do |sql_file|
+      File.read(sql_file).each_line do |record|
+        db[record].insert
+      end
+    end
+  end
 end
 
 namespace :test do
