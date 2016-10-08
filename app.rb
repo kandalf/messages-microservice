@@ -18,6 +18,7 @@ Dir["./routes/**/*.rb"].each     { |rb| require rb }
 Dir["./helpers/**/*.rb"].each    { |rb| require rb }
 
 Cuba.plugin MessageService::Helpers
+Cuba.use Rack::Geolocation
 
 Cuba.define do
   run Routes::MessageService
