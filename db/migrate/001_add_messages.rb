@@ -3,7 +3,6 @@ Sequel.migration do
     create_table :messages do
       primary_key :id
       String :body
-      String :origin
       String :language
       String :country
     end
