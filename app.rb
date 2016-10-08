@@ -4,9 +4,7 @@ require "sequel"
 require_relative "helpers/environment_helper"
 
 ENV["RACK_ENV"] ||= "development"
-DB = MessageService::Helpers.init_environment(ENV["RACK_ENV"])
-
-puts DB
+MessageService::Helpers.init_environment(ENV["RACK_ENV"])
 
 Cuba.plugin Cuba::Safe
 
