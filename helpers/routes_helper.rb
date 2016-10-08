@@ -2,9 +2,11 @@ require "json"
 
 module MessageService
   module Helpers
-    def format_json(resource)
+    def format_json(object)
       res.headers["Content-Type"] = "application/json; charset=UTF-8"
-      res.write JSON.dump(resource)
+      object = object.to_hash if object.respond_to?(:to_hash)
+
+      res.write JSON.dump(object)
 
       halt(res.finish)
     end
