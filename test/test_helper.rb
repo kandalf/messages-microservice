@@ -15,6 +15,11 @@ class MiniTest::Spec
   def app
     Cuba.app
   end
+
+  def run(*args, &block)
+    Sequel::Model.db.transaction(:rollback=>:always, :auto_savepoint=>true){ super }
+    self
+  end
 end
 
 def json_post(path, params = {}, headers = {})
