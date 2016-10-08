@@ -21,6 +21,7 @@ Dir["./helpers/**/*.rb"].each    { |rb| require rb }
 
 Cuba.plugin MessageService::Helpers
 Cuba.use Rack::Geolocation
+Cuba.use Rack::Parser, :parsers => { "application/json" => proc { |data| JSON.parse(data) } }
 
 Cuba.define do
   run Routes::MessageService
