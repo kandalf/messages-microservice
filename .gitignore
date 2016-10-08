@@ -5,3 +5,4 @@ staging.env.sh
 production.env.sh
 tags
 db/*.db
+db/schema.rb
