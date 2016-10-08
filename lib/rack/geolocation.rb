@@ -14,11 +14,16 @@ class Rack::Geolocation
 
       env["rack.geo_data"] = geo_data
 
-      if geo_data["country_code"]
-        country = Country[geo_data["country_code"]]
+      if geo_data[:country_code]
+        country = Country[geo_data[:country_code]]
+
         env["rack.language"] = country.languages.split(",").first
       end
-    rescue
+    rescue => e
+      puts "#" * 10
+      puts "Error geolocating IP: #{e}"
+      puts "#" * 10
+
       env["rack.geo_data"] = {}
     end
 
