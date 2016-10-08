@@ -21,22 +21,10 @@ module MessageService
       format_json(resource)
     end
 
-    def response(status:, body:)
-      res.status = status
-
-      format_json(body)
-    end
-
-    def unprocessable!(message: "Unprocessable Entity", errors: {})
+    def unprocessable!(message = "Unprocessable Entity")
       res.status = 422
 
-      format_json({ message: message, errors: errors })
-    end
-
-    def server_error!(message: "Internal Server Error")
-      res.status = 500
-
-      format_json({ message: message })
+      format_json(message: message)
     end
 
     def not_found!
@@ -51,10 +39,10 @@ module MessageService
       format_json(body)
     end
 
-    def parse_request
-      unprocessable!(message: "Wrong Request Content Type") unless json_request?
+    def bad_request!(message = "Bad Request")
+      res.status = 400
 
-      JSON.parse(req.body.read)
+      format_json(body)
     end
   end
 end
