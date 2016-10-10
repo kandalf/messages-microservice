@@ -2,6 +2,7 @@ module MessageService
   module Helpers
     def self.init_environment(env)
       self.set_env(env)
+      Sequel::Model.plugin :timestamps, update_on_create: true
       Sequel.connect("sqlite://db/#{env.downcase}.db")
     end
 
