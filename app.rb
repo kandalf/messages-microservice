@@ -3,6 +3,7 @@ require "cuba/safe"
 require "sequel"
 require "json"
 require "rack/parser"
+require "oj"
 require_relative "helpers/environment_helper"
 
 ENV["RACK_ENV"] ||= "development"
@@ -21,7 +22,8 @@ Dir["./helpers/**/*.rb"].each    { |rb| require rb }
 
 Cuba.plugin MessageService::Helpers
 Cuba.use Rack::Geolocation
-Cuba.use Rack::Parser, :parsers => { "application/json" => proc { |data| JSON.parse(data) } }
+Cuba.use Rack::Parser, parsers: { "application/json" => proc { |data| JSON.parse(data) } }
+Oj.default_options  = { mode: :compat }
 
 Cuba.define do
   run Routes::MessageService

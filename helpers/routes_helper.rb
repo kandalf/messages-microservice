@@ -4,9 +4,8 @@ module MessageService
   module Helpers
     def format_json(object)
       res.headers["Content-Type"] = "application/json; charset=UTF-8"
-      object = object.to_hash if object.respond_to?(:to_hash)
 
-      res.write JSON.dump(object)
+      res.write Oj.dump(object)
 
       halt(res.finish)
     end
