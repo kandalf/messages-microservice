@@ -20,6 +20,14 @@ module Routes
 
           created!(Presenters::Message.new(message))
         end
+
+        on get do
+          search = Validators::Search.new(req.params)
+
+          bad_request!("Limit must be a number") unless search.valid?
+
+          success!(messages: Message.search(search.attributes).to_a)
+        end
       end
     end
   end
