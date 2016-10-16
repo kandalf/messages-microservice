@@ -60,6 +60,12 @@ It's highly recommendable to use gemsets for environment isolation.
 git clone https://github.com/kandalf/messages-microservice && cd messages-microservice
 ```
 
+### Setup database
+
+```
+rake db:migrate
+```
+
 ### Start the app server
 
 ```
@@ -68,6 +74,13 @@ rackup -p 9292
 
 After this point you can start making requests to `http://localhost:9292` using `curl` or any other HTTP client.
 
+## Running tests
+
+Run all tests with
+
+```
+rake test
+```
 
 ## API Documentation
 
