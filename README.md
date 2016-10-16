@@ -1,159 +1,208 @@
-#3FunkyMonkeys Base Application
+#Messages Microservice
 
-This is a base application intended to be used as a starting point for a new Cuba application.
-It contains a base setup that we've came to find useful after creating a few apps from scratch. In order to make it easier for the next application, we're creating this one, so we can clone and make just small adjustments for the new one.
+This code challenge had some vague requirements, part of the work for it was making decisions about the unspecified or undefined points in the original requirements.
 
-##Directory tree
+A REST server was requested with two endpoints:
 
-The application directory tree is the following
+* `POST` endpoint receiving a string as its input and returning a string saying "[input string] from [country where the request came from]"
+* `GET` endpoint to list messages allowing to filter by language and to limit the total amount of results returned
 
-```
-.
-├── app.rb
-├── config.ru
-├── console
-├── env.sh.sample
-├── helpers
-│   └── environment_helper.rb
-├── lib
-├── models
-├── README.md
-├── routes
-│   └── base.rb
-└── views
-    ├── layout
-    │   └── home.erb
-    ├── pages
-    │   └── home.erb
-    └── shared
-```
+This solution was thought as a micro service that could be part of a bigger distributed system as well as used by a simple fronted application. For this purpose, it uses a JSON interface which helps it define a clear interface to interact with other components.
 
-The `app.rb` file contains the application boot with `require` directives and some useful plugins, such as `Rack::Session::Cookie` and `Rack::Static`
+Given this should be a micro service and probably run on its own address, it uses the root endpoint with the `GET` and `POST` HTTP verbs variants instead of defining any named endpoints.
 
-```Ruby
-require "cuba"
-require "cuba/safe"
-require "cuba/render"
-require "cuba/flash"
-require "sequel"
+## Setup
 
-ENV["RACK_ENV"] ||= "development"
-require_relative "helpers/environment_helper"
-MessageService::Helpers.init_environment(ENV["RACK_ENV"])
+You need a working Ruby 2.x environment. It's been tested in Ruby 2.3.1, but it should work in 2.2.x as well.
 
-Cuba.plugin Cuba::Safe
-Cuba.plugin Cuba::Render
+Messgaes are stored in a SQLite3 database, no need for a database server.
 
-Cuba.use Rack::Session::Cookie, :secret => ENV["SESSION_SECRET"]
+### Dependencies
 
-Cuba.use Rack::Static,
-  root: File.expand_path(File.dirname(__FILE__)) + "/public",
-  urls: %w[/img /css /js /fonts]
+It requires the following gems for runtime:
 
-Cuba.use Rack::MethodOverride
+* cuba -v 3.8.0
+* sequel -v 4.39.0
+* sqlite3 -v 1.3.11
+* rack-parser -v 0.7.0
+* oj -v 2.17.4
+* scrivener -v 1.0.0
 
-Dir["./lib/**/*.rb"].each     { |rb| require rb }
-Dir["./models/**/*.rb"].each  { |rb| require rb }
-Dir["./routes/**/*.rb"].each  { |rb| require rb }
-Dir["./helpers/**/*.rb"].each { |rb| require rb }
+And these for running the test suite:
 
-Cuba.plugin MessageService::Helpers
-Cuba.use Cuba::Flash
-
-Cuba.define do
-  run BaseRoutes
-end
-```
-
-It also makes use of the `helpers/environment_helper.rb` which provides a method to initialize the environment.
-
-```Ruby
-module MessageService
-  module Helpers
-    def self.init_environment(env)
-      self.set_env(env)
-
-      db_params = {
-        'host' => ENV["DATABASE_HOST"],
-        'port' => ENV["DATABASE_PORT"],
-        'user' => ENV["DATABASE_USER"],
-        'password' => ENV["DATABASE_PASS"],
-        'db_name' => ENV["DATABASE_NAME"]
-      }
-
-      Sequel.connect("postgres://#{ENV['DATABASE_USER']}:#{ENV['DATABASE_PASS']}@#{ENV['DATABASE_HOST']}:#{ENV['DATABASE_PORT']}/#{ENV['DATABASE_NAME']}").extension(:pg_array).extension(:pg_json)
-    end
-
-    def self.set_env(env)
-      filename = env.to_s + ".env.sh"
-
-      if File.exists? filename
-        env_vars = File.read(filename)
-        env_vars.each_line do |var|
-          name, value = var.split("=")
-          if name && value
-            ENV[name.strip] = value.strip
-          end
-        end
-      end
-    end
-  end
-end
-```
-
-It assumes Postgres as your database, because it's the one of our choice, but you should connect to any database here, as well as make other setup before the application starts.
+* rack-test -v 0.6.3
+* mocha -v 1.1.0
 
 
-##Default Tasks
+Gems dependencies are listed in `.gems` and `.gems-test` files to be used with the [dep](https://rubygems.org/gems/dep) gem.
 
-The application has a Rakefile with 5 common utility tasks
+If you want to use `dep`, first [get the code](#clone-the-repository), then run the following within the cloned directory:
 
 ```
-rake db:migrate       # Run DB migrations on db/migrate directory
-rake db:schema:dump   # Dump the DB schema to db/schema.rb
-rake db:schema:load   # Load the DB schema defined in db/schema.rb
-rake db:test:prepare  # Prepares test DB by copying current dev schema
-rake setup            # Setup application for new name
-rake test:all         # Runs all tests in test/{models/helpers/routes/lib}
+gem install dep
+dep install && dep -f .gems-test install
 ```
 
-All are pretty descriptive and pretty simple. Feel free to remove the `Rakefile` entirely if you don't use a Sequel compatible database though.
-
-### The Setup Task
-
-This is an utility task to help the boostrap of the new application.
-The base application uses the `MessageService` name in a few places, this task helps you define your app name and replace the `BaseApp` name in the files.
-It is an interactive task and will ask you for your app name and your git repository to set your origin remote.
-
-In case you don't want to use this task and prefer to do it manually, all it does is:
+Or you can manually install them:
 
 ```
-rm -rf .git #Removes base app git info
-mv routes/base.rb routes/yourapp.rb #Renames base routes file
-find ./ -type f | xargs sed -i -e 's/MessageService/YourApp/' #Replaces BaseApp with YourApp name in every file
-cp env.sh.sample development.env.sh #Copies the sample environment file for the development environment
+cat {.gems,.gems-test} | sed -e 's/ -v /:/g' | xargs -p gem install
 ```
 
-After that, it will ask you for your app's git information. If you don't have or don't intend to version it under git, it will finish there.
+It's highly recommendable to use gemsets for environment isolation.
 
-##Dependencies
 
-This app provides the `.gems` and `.gems-test` files listing gem dependencies for the [dep](https://rubygems.org/gems/dep) gem.
+## Running the code
 
-Having the gem installed you should do
-
-```
-dep install
-dep install -f .gems-test
-```
-
-If you want to manage your dependencies in any other way, just remove these files and setup your own.
-
-##Ruby Version
-
-This app provides the `.ruby-version` file with ruby version and gemset name. Copy this file and edit your gemset:
+### Clone the repository
 
 ```
-cp ruby-version.sample .ruby-version
-$EDITOR .ruby-version
+git clone https://github.com/kandalf/messages-microservice && cd messages-microservice
+```
+
+### Start the app server
+
+```
+rackup -p 9292
+```
+
+After this point you can start making requests to `http://localhost:9292` using `curl` or any other HTTP client.
+
+
+## API Documentation
+
+
+### Create message
+
+`POST /`
+
+Create a new message.
+
+This endpoints accepts the following parameters:
+
+* message: The actual message string. **Mandatory**
+* lang:    A locale like string specifying the language of the message. For example: `es-AR`, `en-US`, `en-UK`, `nl-NL` **Optional**
+
+If `lang` is not specified, it will be guessed from the country where the request comes from.
+
+### Request
+
+```
+Content-type: application/json
+
+{
+  message: "Hello",
+  lang: "en-US"
+}
+```
+
+### Responses
+
+####Success
+
+```
+201 Created
+
+Content-type: application/json
+
+{ "message": "Hello from Argentina" }
+```
+
+#### Bad Request
+
+Not a JSON request
+
+```
+400 Bad Request
+
+Content-type: application/json
+
+{ "message": "Bad Request" }
+```
+
+#### Unprocessable Entity
+
+Message is empty or missing
+
+```
+422 Unprocessable Entity
+
+{
+  "message": "Unprocessable Entity",
+  "errors": { "body": ["not_present"] }
+}
+```
+
+
+## List messages
+
+`GET /`
+
+List messages ordered by creation date with newer messages first.
+
+It accepts two query parameters:
+
+* lang: Locale-like string (`es-AR`, `en-US`, `es`) to filter messages by language. The special non-locale-like string "all" is accepted. **Optional**
+* limit: Integer to limit the amount of results to return. **Optional**
+
+### Request
+
+```
+GET /?lang=es&limit=3
+```
+
+### Responses
+
+#### Success
+
+```
+200 OK
+
+Content-type: application/json
+
+{
+  "messages":
+  [
+    {
+      "id": 34,
+      "body": "randomly",
+      "origin": null,
+      "language": "es-AR",
+      "country": "UnitedStates",
+      "created_at": "2016-10-10T13:14:34-03:00",
+      "updated_at": "2016-10-10T13:14:34-03:00"
+    },
+    {
+      "id": 33,
+      "body": "randomly",
+      "origin": null,
+      "language": "es-AR",
+      "country": "UnitedStates",
+      "created_at": "2016-10-10T13:14:34-03:00",
+      "updated_at": "2016-10-10T13:14:34-03:00"
+    },
+    {
+      "id": 32,
+      "body": "messages",
+      "origin": null,
+      "language": "en-US",
+      "country": "Netherlands",
+      "created_at": "2016-10-10T13:14:34-03:00",
+      "updated_at": "2016-10-10T13:14:34-03:00"
+    }
+  ]
+}
+
+```
+
+#### Bad Request
+
+Limit is not numeric
+
+```
+400 Bad Request
+
+Content-type: application/json
+
+{ "message": "Limit must be a number" }
 ```
