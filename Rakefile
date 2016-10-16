@@ -108,6 +108,9 @@ namespace :test do
   end
 end
 
+desc "Run all tests"
+task :test => "test:all"
+
 desc "Setup application for new name"
 task :setup do
   fail "Operating System not supported" if /windows/ =~ RUBY_PLATFORM.downcase
